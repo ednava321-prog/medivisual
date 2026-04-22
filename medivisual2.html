@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediVisual 2.0 — Diseñador de Anuncios Médicos</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07090f;--bg2:#0d1117;--bg3:#141b26;--card:#111827;
+  --border:#1e2d42;--accent:#2563eb;--accent2:#3b82f6;
+  --gold:#f59e0b;--green:#10b981;--red:#ef4444;--purple:#8b5cf6;
+  --t1:#f1f5f9;--t2:#94a3b8;--t3:#475569;--r:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 10% 0%,rgba(37,99,235,0.08) 0%,transparent 50%),radial-gradient(ellipse 40% 30% at 90% 100%,rgba(139,92,246,0.06) 0%,transparent 50%);pointer-events:none;z-index:0;}
+
+/* PIN GATE */
+#pin-gate{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px;}
+.pin-card{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:40px 32px;width:100%;max-width:380px;text-align:center;}
+.pin-logo{font-family:'Syne',sans-serif;font-size:30px;font-weight:800;margin-bottom:6px;}
+.pin-logo span{color:var(--accent2);}
+.pin-sub{font-size:11px;color:var(--t3);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:32px;}
+.pin-field{width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:14px;padding:16px;font-size:24px;font-weight:700;color:var(--t1);font-family:'Syne',sans-serif;text-align:center;letter-spacing:10px;outline:none;margin-bottom:10px;transition:border-color 0.2s;}
+.pin-field:focus{border-color:var(--accent2);}
+.pin-err{font-size:12px;color:var(--red);min-height:18px;margin-bottom:10px;}
+.pin-btn{width:100%;padding:15px;border-radius:12px;background:var(--accent);color:white;font-size:15px;font-weight:700;font-family:'Syne',sans-serif;border:none;cursor:pointer;transition:background 0.2s;}
+.pin-btn:hover{background:var(--accent2);}
+
+/* APP */
+#app{display:none;position:relative;z-index:1;}
+
+/* HEADER */
+.hdr{background:rgba(7,9,15,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:13px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.hdr-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;}
+.hdr-logo span{color:var(--accent2);}
+.hdr-sub{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:0.1em;}
+.hdr-right{display:flex;align-items:center;gap:10px;}
+.hdr-clients{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:12px;color:var(--t2);cursor:pointer;font-family:'DM Sans',sans-serif;}
+.hdr-badge{background:rgba(37,99,235,0.12);border:1px solid rgba(59,130,246,0.25);border-radius:20px;padding:5px 12px;font-size:11px;color:var(--accent2);display:flex;align-items:center;gap:5px;}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:360px 1fr 380px;min-height:calc(100vh - 50px);}
+
+/* PANELS */
+.panel{overflow-y:auto;max-height:calc(100vh - 50px);}
+.panel::-webkit-scrollbar{width:3px;}
+.panel::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+.panel-l{background:var(--card);border-right:1px solid var(--border);padding:20px 18px;}
+.panel-m{background:var(--bg2);padding:24px;display:flex;flex-direction:column;align-items:center;}
+.panel-r{background:var(--card);border-left:1px solid var(--border);padding:20px 18px;}
+
+/* SECTION */
+.sec{margin-bottom:20px;}
+.sec-title{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* FORM */
+.fg{margin-bottom:10px;}
+.fl{display:block;font-size:11px;color:var(--t2);margin-bottom:5px;}
+.fi{width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:9px;padding:9px 12px;font-size:13px;color:var(--t1);font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s;-webkit-appearance:none;}
+.fi:focus{border-color:var(--accent2);}
+.fi::placeholder{color:var(--t3);}
+select.fi option{background:var(--bg2);}
+.fi-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+
+/* TEMPLATE SELECTOR */
+.tpl-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.tpl-card{background:var(--bg3);border:2px solid var(--border);border-radius:10px;padding:10px 6px;cursor:pointer;text-align:center;transition:all 0.15s;}
+.tpl-card:hover{border-color:var(--accent2);}
+.tpl-card.sel{border-color:var(--accent2);background:rgba(37,99,235,0.1);}
+.tpl-icon{font-size:22px;margin-bottom:4px;}
+.tpl-name{font-size:10px;font-weight:600;color:var(--t1);line-height:1.3;}
+
+/* COLOR PICKER */
+.color-row{display:flex;gap:8px;align-items:center;}
+.color-swatch{width:32px;height:32px;border-radius:8px;border:2px solid var(--border);cursor:pointer;flex-shrink:0;}
+.color-hex{flex:1;background:var(--bg3);border:1.5px solid var(--border);border-radius:9px;padding:8px 10px;font-size:12px;color:var(--t1);font-family:monospace;outline:none;}
+.color-hex:focus{border-color:var(--accent2);}
+
+/* UPLOAD */
+.upload-zone{border:2px dashed var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:all 0.2s;position:relative;}
+.upload-zone:hover{border-color:var(--accent2);background:rgba(37,99,235,0.04);}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.upload-zone .uz-icon{font-size:24px;margin-bottom:4px;}
+.upload-zone .uz-txt{font-size:11px;color:var(--t2);}
+.upload-preview{width:100%;height:80px;object-fit:contain;border-radius:8px;margin-top:8px;display:none;}
+
+/* FORMAT */
+.fmt-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.fmt-btn{background:var(--bg3);border:1.5px solid var(--border);border-radius:9px;padding:8px 6px;cursor:pointer;text-align:center;transition:all 0.15s;font-family:'DM Sans',sans-serif;}
+.fmt-btn:hover{border-color:var(--accent2);}
+.fmt-btn.sel{border-color:var(--accent2);background:rgba(37,99,235,0.1);}
+.fmt-btn .fi{font-size:16px;margin-bottom:2px;}
+.fmt-name{font-size:10px;font-weight:600;color:var(--t1);}
+.fmt-size{font-size:9px;color:var(--t3);}
+
+/* PILLS */
+.pills{display:flex;flex-wrap:wrap;gap:5px;}
+.pill{padding:5px 10px;border-radius:15px;border:1.5px solid var(--border);background:transparent;font-size:11px;font-weight:500;color:var(--t2);cursor:pointer;transition:all 0.12s;font-family:'DM Sans',sans-serif;}
+.pill:hover,.pill.sel{border-color:var(--accent2);color:var(--accent2);background:rgba(37,99,235,0.08);}
+
+/* API KEY */
+.api-row{display:flex;gap:6px;}
+.api-input{flex:1;background:var(--bg3);border:1.5px solid var(--border);border-radius:9px;padding:9px 12px;font-size:12px;color:var(--t1);font-family:'DM Sans',sans-serif;outline:none;}
+.api-input:focus{border-color:var(--accent2);}
+.api-input::placeholder{color:var(--t3);}
+.api-save{padding:9px 12px;border-radius:9px;background:var(--accent);color:white;font-size:11px;font-weight:700;border:none;cursor:pointer;white-space:nowrap;}
+.api-status{font-size:10px;margin-top:4px;}
+.api-status.ok{color:var(--green);}
+.api-status.no{color:var(--t3);}
+
+/* GENERATE BTN */
+.btn-gen{width:100%;padding:14px;border-radius:11px;background:linear-gradient(135deg,var(--accent) 0%,var(--purple) 100%);color:white;font-size:14px;font-weight:800;font-family:'Syne',sans-serif;border:none;cursor:pointer;margin-top:16px;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-gen:hover{transform:translateY(-1px);box-shadow:0 8px 25px rgba(37,99,235,0.35);}
+.btn-gen:disabled{opacity:0.5;cursor:not-allowed;transform:none;box-shadow:none;}
+
+/* CANVAS AREA */
+.canvas-wrap{position:relative;width:100%;max-width:500px;}
+.canvas-label{font-size:11px;color:var(--t3);text-align:center;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.08em;}
+#design-canvas{border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.5);display:block;max-width:100%;height:auto;}
+.canvas-loading{position:absolute;inset:0;background:rgba(7,9,15,0.85);border-radius:12px;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;}
+.canvas-loading.show{display:flex;}
+.spin-ring{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent2);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.spin-txt{font-size:13px;color:var(--t2);}
+
+/* DOWNLOAD BTN */
+.btn-dl{width:100%;padding:13px;border-radius:11px;background:var(--green);color:white;font-size:14px;font-weight:700;font-family:'Syne',sans-serif;border:none;cursor:pointer;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.2s;}
+.btn-dl:hover{opacity:0.88;}
+.btn-dl:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* RIGHT PANEL - COPY */
+.copy-section{margin-bottom:18px;}
+.copy-lbl{font-size:10px;font-weight:600;color:var(--gold);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;}
+.copy-box{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:12px;font-size:13px;color:var(--t1);line-height:1.6;min-height:50px;}
+.copy-actions{display:flex;gap:6px;margin-top:6px;}
+.copy-btn{flex:1;padding:7px;border-radius:8px;background:transparent;border:1px solid var(--border);font-size:11px;font-weight:600;color:var(--t2);cursor:pointer;transition:all 0.15s;font-family:'DM Sans',sans-serif;}
+.copy-btn:hover{border-color:var(--accent2);color:var(--accent2);}
+.copy-btn.primary{background:var(--accent);border-color:var(--accent);color:white;}
+
+/* CLIENTS MODAL */
+#clients-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;align-items:center;justify-content:center;padding:20px;}
+#clients-modal.show{display:flex;}
+.clients-card{background:var(--card);border:1px solid var(--border);border-radius:18px;width:100%;max-width:480px;overflow:hidden;}
+.clients-head{background:var(--bg3);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;}
+.clients-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;}
+.clients-x{background:none;border:none;color:var(--t2);font-size:20px;cursor:pointer;}
+.clients-body{padding:16px 20px;max-height:400px;overflow-y:auto;}
+.client-item{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:border-color 0.15s;}
+.client-item:hover{border-color:var(--accent2);}
+.client-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;}
+.client-name{font-size:13px;font-weight:600;}
+.client-esp{font-size:11px;color:var(--t3);}
+.clients-add{width:100%;padding:11px;border-radius:10px;background:var(--accent);color:white;font-size:13px;font-weight:700;border:none;cursor:pointer;margin-top:8px;font-family:'DM Sans',sans-serif;}
+
+/* TOAST */
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--green);color:white;padding:9px 18px;border-radius:25px;font-size:12px;font-weight:700;z-index:999;transition:transform 0.3s;pointer-events:none;}
+#toast.show{transform:translateX(-50%) translateY(0);}
+#toast.err{background:var(--red);}
+
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr;}
+  .panel{max-height:none;}
+  .panel-m{padding:16px;}
+}
+</style>
+</head>
+<body>
+
+<!-- PIN -->
+<div id="pin-gate">
+  <div class="pin-card">
+    <div class="pin-logo">Medi<span>Visual</span></div>
+    <div class="pin-sub">Diseñador de anuncios médicos</div>
+    <div style="font-size:32px;margin-bottom:20px;">🎨</div>
+    <input class="pin-field" id="pin-input" type="password" inputmode="numeric" maxlength="8" placeholder="PIN" onkeydown="if(event.key==='Enter')checkPin()">
+    <div class="pin-err" id="pin-err"></div>
+    <button class="pin-btn" onclick="checkPin()">Entrar →</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <div class="hdr">
+    <div>
+      <div class="hdr-logo">Medi<span>Visual</span> <span style="font-size:11px;color:var(--t3);font-weight:400;">2.0</span></div>
+      <div class="hdr-sub">Diseñador de anuncios médicos · Meta Ads</div>
+    </div>
+    <div class="hdr-right">
+      <button class="hdr-clients" onclick="document.getElementById('clients-modal').classList.add('show')">👥 Mis clientes</button>
+      <div class="hdr-badge"><div class="dot"></div>IA Lista</div>
+    </div>
+  </div>
+
+  <div class="layout">
+
+    <!-- LEFT: CONTROLS -->
+    <div class="panel panel-l">
+
+      <!-- API KEY -->
+      <div class="sec">
+        <div class="sec-title">API Key OpenAI</div>
+        <div class="api-row">
+          <input class="api-input" id="api-key" type="password" placeholder="sk-...">
+          <button class="api-save" onclick="saveKey()">Guardar</button>
+        </div>
+        <div class="api-status no" id="api-status">⚠ Ingresa tu API Key</div>
+      </div>
+
+      <!-- TIPO DE DISEÑO -->
+      <div class="sec">
+        <div class="sec-title">Tipo de diseño</div>
+        <div class="tpl-grid">
+          <div class="tpl-card sel" onclick="selTpl(this,'portada')" id="tpl-portada">
+            <div class="tpl-icon">🏥</div>
+            <div class="tpl-name">Portada servicio</div>
+          </div>
+          <div class="tpl-card" onclick="selTpl(this,'promo')" id="tpl-promo">
+            <div class="tpl-icon">💰</div>
+            <div class="tpl-name">Promoción precio</div>
+          </div>
+          <div class="tpl-card" onclick="selTpl(this,'antesdespues')" id="tpl-antesdespues">
+            <div class="tpl-icon">✨</div>
+            <div class="tpl-name">Antes y después</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CLIENTE / DATOS -->
+      <div class="sec">
+        <div class="sec-title">Datos del cliente</div>
+        <div class="fg"><label class="fl">Nombre del doctor / clínica</label><input class="fi" id="f-doctor" placeholder="Dra. Tania Nieblas"></div>
+        <div class="fg"><label class="fl">Especialidad</label><input class="fi" id="f-esp" placeholder="Oftalmología"></div>
+        <div class="fg"><label class="fl">WhatsApp / Teléfono</label><input class="fi" id="f-tel" placeholder="667 123 4567"></div>
+        <div class="fg"><label class="fl">Servicio o tratamiento</label><input class="fi" id="f-servicio" placeholder="Blefaroplastía, blanqueamiento dental..."></div>
+      </div>
+
+      <!-- PROMO FIELDS (dinámicos) -->
+      <div class="sec" id="sec-promo" style="display:none;">
+        <div class="sec-title">Datos de promoción</div>
+        <div class="fi-row">
+          <div class="fg"><label class="fl">Precio original</label><input class="fi" id="f-precio-antes" placeholder="$25,000"></div>
+          <div class="fg"><label class="fl">Precio promoción</label><input class="fi" id="f-precio-promo" placeholder="$18,000"></div>
+        </div>
+        <div class="fg"><label class="fl">Texto adicional (opcional)</label><input class="fi" id="f-promo-extra" placeholder="Solo este mes · Incluye valoración"></div>
+      </div>
+
+      <!-- ANTES/DESPUÉS FIELDS -->
+      <div class="sec" id="sec-ad" style="display:none;">
+        <div class="sec-title">Fotos antes / después</div>
+        <div class="fi-row">
+          <div>
+            <div class="fl" style="margin-bottom:5px;">Foto ANTES</div>
+            <div class="upload-zone" onclick="triggerUpload('foto-antes')">
+              <input type="file" id="foto-antes" accept="image/*" onchange="previewUpload(this,'prev-antes')">
+              <div class="uz-icon">📷</div>
+              <div class="uz-txt">Subir foto</div>
+            </div>
+            <img id="prev-antes" class="upload-preview">
+          </div>
+          <div>
+            <div class="fl" style="margin-bottom:5px;">Foto DESPUÉS</div>
+            <div class="upload-zone" onclick="triggerUpload('foto-despues')">
+              <input type="file" id="foto-despues" accept="image/*" onchange="previewUpload(this,'prev-despues')">
+              <div class="uz-icon">📷</div>
+              <div class="uz-txt">Subir foto</div>
+            </div>
+            <img id="prev-despues" class="upload-preview">
+          </div>
+        </div>
+      </div>
+
+      <!-- IMAGEN FONDO -->
+      <div class="sec" id="sec-foto">
+        <div class="sec-title">Imagen de fondo</div>
+        <div class="pills" id="pills-foto" style="margin-bottom:8px;">
+          <button class="pill sel" onclick="selPill(this,'foto')">Generar con IA</button>
+          <button class="pill" onclick="selPill(this,'foto')">Subir foto</button>
+        </div>
+        <div id="upload-fondo" style="display:none;">
+          <div class="upload-zone" onclick="triggerUpload('foto-fondo')">
+            <input type="file" id="foto-fondo" accept="image/*" onchange="previewUpload(this,'prev-fondo')">
+            <div class="uz-icon">🖼️</div>
+            <div class="uz-txt">Subir imagen de fondo</div>
+          </div>
+          <img id="prev-fondo" class="upload-preview">
+        </div>
+      </div>
+
+      <!-- MARCA -->
+      <div class="sec">
+        <div class="sec-title">Marca del cliente</div>
+        <div class="fg">
+          <label class="fl">Logo (opcional)</label>
+          <div class="upload-zone" onclick="triggerUpload('foto-logo')">
+            <input type="file" id="foto-logo" accept="image/*" onchange="previewUpload(this,'prev-logo')">
+            <div class="uz-icon">🏷️</div>
+            <div class="uz-txt">Subir logo PNG</div>
+          </div>
+          <img id="prev-logo" class="upload-preview" style="height:50px;object-fit:contain;">
+        </div>
+        <div class="fg">
+          <label class="fl">Color principal de marca</label>
+          <div class="color-row">
+            <input type="color" class="color-swatch" id="color-marca" value="#1a56db" oninput="updateColorHex('color-marca','hex-marca')">
+            <input class="color-hex" id="hex-marca" value="#1a56db" oninput="updateColorSwatch('hex-marca','color-marca')" maxlength="7">
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">Color secundario</label>
+          <div class="color-row">
+            <input type="color" class="color-swatch" id="color-sec" value="#ffffff" oninput="updateColorHex('color-sec','hex-sec')">
+            <input class="color-hex" id="hex-sec" value="#ffffff" oninput="updateColorSwatch('hex-sec','color-sec')" maxlength="7">
+          </div>
+        </div>
+      </div>
+
+      <!-- FORMATO -->
+      <div class="sec">
+        <div class="sec-title">Formato</div>
+        <div class="fmt-grid">
+          <div class="fmt-btn sel" onclick="selFmt(this,1080,1080)">
+            <div class="fi">⬛</div>
+            <div class="fmt-name">Feed cuadrado</div>
+            <div class="fmt-size">1080×1080</div>
+          </div>
+          <div class="fmt-btn" onclick="selFmt(this,1080,1920)">
+            <div class="fi">📱</div>
+            <div class="fmt-name">Story / Reels</div>
+            <div class="fmt-size">1080×1920</div>
+          </div>
+          <div class="fmt-btn" onclick="selFmt(this,1200,628)">
+            <div class="fi">🖼️</div>
+            <div class="fmt-name">Horizontal</div>
+            <div class="fmt-size">1200×628</div>
+          </div>
+          <div class="fmt-btn" onclick="selFmt(this,1080,1080)">
+            <div class="fi">🔲</div>
+            <div class="fmt-name">Carrusel</div>
+            <div class="fmt-size">1080×1080</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-gen" id="btn-gen" onclick="generarDiseno()">✨ Generar diseño</button>
+
+    </div>
+
+    <!-- MIDDLE: CANVAS -->
+    <div class="panel panel-m">
+      <div class="canvas-label">Vista previa del diseño</div>
+      <div class="canvas-wrap">
+        <canvas id="design-canvas" width="540" height="540"></canvas>
+        <div class="canvas-loading" id="canvas-loading">
+          <div class="spin-ring"></div>
+          <div class="spin-txt" id="spin-txt">Generando imagen con IA...</div>
+        </div>
+      </div>
+      <button class="btn-dl" id="btn-dl" onclick="descargarDiseno()" disabled>⬇ Descargar PNG listo para Meta Ads</button>
+    </div>
+
+    <!-- RIGHT: COPY -->
+    <div class="panel panel-r">
+      <div class="sec">
+        <div class="sec-title">Copy generado</div>
+      </div>
+
+      <div class="copy-section">
+        <div class="copy-lbl">📣 Headline</div>
+        <div class="copy-box" id="copy-headline">—</div>
+        <div class="copy-actions">
+          <button class="copy-btn" onclick="copiar('copy-headline')">📋 Copiar</button>
+        </div>
+      </div>
+
+      <div class="copy-section">
+        <div class="copy-lbl">📝 Descripción del anuncio</div>
+        <div class="copy-box" id="copy-desc">—</div>
+        <div class="copy-actions">
+          <button class="copy-btn" onclick="copiar('copy-desc')">📋 Copiar</button>
+        </div>
+      </div>
+
+      <div class="copy-section">
+        <div class="copy-lbl">🔘 CTA</div>
+        <div class="copy-box" id="copy-cta">—</div>
+        <div class="copy-actions">
+          <button class="copy-btn" onclick="copiar('copy-cta')">📋 Copiar</button>
+        </div>
+      </div>
+
+      <div class="copy-section">
+        <div class="copy-lbl">📱 Caption para redes</div>
+        <div class="copy-box" id="copy-caption" style="min-height:100px;">—</div>
+        <div class="copy-actions">
+          <button class="copy-btn" onclick="copiar('copy-caption')">📋 Copiar</button>
+          <button class="copy-btn primary" onclick="copiarTodo()">📋 Copiar todo</button>
+        </div>
+      </div>
+
+      <div class="sec" style="margin-top:8px;">
+        <div class="sec-title">Prompt de imagen usado</div>
+        <div class="copy-box" id="copy-prompt" style="font-size:11px;color:var(--t3);min-height:80px;">—</div>
+        <div class="copy-actions">
+          <button class="copy-btn" onclick="copiar('copy-prompt')">📋 Copiar prompt</button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- CLIENTS MODAL -->
+<div id="clients-modal">
+  <div class="clients-card">
+    <div class="clients-head">
+      <div class="clients-title">👥 Mis clientes</div>
+      <button class="clients-x" onclick="document.getElementById('clients-modal').classList.remove('show')">✕</button>
+    </div>
+    <div class="clients-body" id="clients-list">
+      <div style="text-align:center;color:var(--t3);font-size:13px;padding:20px;">Aún no tienes clientes guardados.</div>
+    </div>
+    <div style="padding:12px 20px;">
+      <button class="clients-add" onclick="guardarClienteActual()">+ Guardar cliente actual</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════
+// CONFIG & STATE
+// ═══════════════════════════════════
+const PIN = '9999';
+let apiKey = localStorage.getItem('mv2-key') || '';
+let tplSel = 'portada';
+let fotoSel = 'ia';
+let fmtW = 1080, fmtH = 1080;
+let bgImageData = null;
+let logoData = null;
+let fotoAntesData = null;
+let fotosDespuesData = null;
+let canvasReady = false;
+
+// Init
+if(sessionStorage.getItem('mv2-auth')==='1'){
+  document.getElementById('pin-gate').style.display='none';
+  document.getElementById('app').style.display='block';
+}
+if(apiKey){
+  document.getElementById('api-key').value=apiKey;
+  document.getElementById('api-status').textContent='✓ API Key guardada';
+  document.getElementById('api-status').className='api-status ok';
+}
+renderCanvas();
+renderClients();
+
+// ═══════════════════════════════════
+// PIN
+// ═══════════════════════════════════
+function checkPin(){
+  const v=document.getElementById('pin-input').value.trim();
+  if(v===PIN){
+    document.getElementById('pin-gate').style.display='none';
+    document.getElementById('app').style.display='block';
+    sessionStorage.setItem('mv2-auth','1');
+  }else{
+    document.getElementById('pin-err').textContent='PIN incorrecto';
+    document.getElementById('pin-input').value='';
+    setTimeout(()=>document.getElementById('pin-err').textContent='',2000);
+  }
+}
+
+// ═══════════════════════════════════
+// API KEY
+// ═══════════════════════════════════
+function saveKey(){
+  const k=document.getElementById('api-key').value.trim();
+  if(!k.startsWith('sk-')){toast('Key inválida',true);return;}
+  apiKey=k;localStorage.setItem('mv2-key',k);
+  document.getElementById('api-status').textContent='✓ API Key guardada';
+  document.getElementById('api-status').className='api-status ok';
+  toast('API Key guardada ✓');
+}
+
+// ═══════════════════════════════════
+// UI SELECTORS
+// ═══════════════════════════════════
+function selTpl(el,tipo){
+  document.querySelectorAll('.tpl-card').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  tplSel=tipo;
+  document.getElementById('sec-promo').style.display=tipo==='promo'?'block':'none';
+  document.getElementById('sec-ad').style.display=tipo==='antesdespues'?'block':'none';
+  document.getElementById('sec-foto').style.display=tipo==='antesdespues'?'none':'block';
+}
+
+function selPill(el,grupo){
+  el.closest('.pills').querySelectorAll('.pill').forEach(p=>p.classList.remove('sel'));
+  el.classList.add('sel');
+  if(grupo==='foto'){
+    fotoSel=el.textContent.includes('IA')?'ia':'upload';
+    document.getElementById('upload-fondo').style.display=fotoSel==='upload'?'block':'none';
+  }
+}
+
+function selFmt(el,w,h){
+  document.querySelectorAll('.fmt-btn').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+  fmtW=w;fmtH=h;
+  const canvas=document.getElementById('design-canvas');
+  const scale=540/Math.max(w,h);
+  canvas.width=Math.round(w*scale);
+  canvas.height=Math.round(h*scale);
+  renderCanvas();
+}
+
+function updateColorHex(swatchId,hexId){
+  document.getElementById(hexId).value=document.getElementById(swatchId).value;
+}
+function updateColorSwatch(hexId,swatchId){
+  const v=document.getElementById(hexId).value;
+  if(/^#[0-9a-fA-F]{6}$/.test(v))document.getElementById(swatchId).value=v;
+}
+
+// ═══════════════════════════════════
+// UPLOADS
+// ═══════════════════════════════════
+function triggerUpload(id){document.getElementById(id).click();}
+
+function previewUpload(input,previewId){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const img=document.getElementById(previewId);
+    img.src=e.target.result;
+    img.style.display='block';
+    if(previewId==='prev-logo')logoData=e.target.result;
+    else if(previewId==='prev-fondo')bgImageData=e.target.result;
+    else if(previewId==='prev-antes')fotoAntesData=e.target.result;
+    else if(previewId==='prev-despues')fotosDespuesData=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ═══════════════════════════════════
+// CANVAS PREVIEW (placeholder)
+// ═══════════════════════════════════
+function renderCanvas(bgUrl){
+  const canvas=document.getElementById('design-canvas');
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width,H=canvas.height;
+  const color=document.getElementById('color-marca')?.value||'#1a56db';
+
+  ctx.clearRect(0,0,W,H);
+
+  if(bgUrl){
+    const img=new Image();
+    img.crossOrigin='anonymous';
+    img.onload=()=>{
+      ctx.drawImage(img,0,0,W,H);
+      drawOverlay(ctx,W,H,color);
+      drawTexts(ctx,W,H);
+      if(logoData)drawLogo(ctx,W,H);
+      canvasReady=true;
+      document.getElementById('btn-dl').disabled=false;
+    };
+    img.onerror=()=>{
+      drawPlaceholder(ctx,W,H,color);
+    };
+    img.src=bgUrl;
+  }else{
+    drawPlaceholder(ctx,W,H,color);
+  }
+}
+
+function drawPlaceholder(ctx,W,H,color){
+  // Gradient background
+  const grad=ctx.createLinearGradient(0,0,W,H);
+  grad.addColorStop(0,color);
+  grad.addColorStop(1,darkenColor(color,0.5));
+  ctx.fillStyle=grad;
+  ctx.fillRect(0,0,W,H);
+
+  // Grid lines
+  ctx.strokeStyle='rgba(255,255,255,0.06)';
+  ctx.lineWidth=1;
+  for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+  ctx.fillStyle='rgba(255,255,255,0.08)';
+  ctx.font=`${W*0.08}px Syne, sans-serif`;
+  ctx.textAlign='center';
+  ctx.fillText('Vista previa',W/2,H/2-10);
+  ctx.font=`${W*0.04}px DM Sans, sans-serif`;
+  ctx.fillStyle='rgba(255,255,255,0.4)';
+  ctx.fillText('Genera el diseño para ver aquí',W/2,H/2+30);
+}
+
+function drawOverlay(ctx,W,H,color){
+  // Bottom gradient overlay
+  const grad=ctx.createLinearGradient(0,H*0.3,0,H);
+  grad.addColorStop(0,'rgba(0,0,0,0)');
+  grad.addColorStop(0.5,`${color}99`);
+  grad.addColorStop(1,`${color}ee`);
+  ctx.fillStyle=grad;
+  ctx.fillRect(0,0,W,H);
+
+  // Top bar
+  ctx.fillStyle=color+'dd';
+  ctx.fillRect(0,0,W,H*0.1);
+}
+
+function drawTexts(ctx,W,H){
+  const doctor=document.getElementById('f-doctor')?.value||'Nombre del Doctor';
+  const servicio=document.getElementById('f-servicio')?.value||'Servicio Médico';
+  const tel=document.getElementById('f-tel')?.value||'';
+  const color2=document.getElementById('color-sec')?.value||'#ffffff';
+  const precoAntes=document.getElementById('f-precio-antes')?.value||'';
+  const precoPromo=document.getElementById('f-precio-promo')?.value||'';
+
+  ctx.textAlign='center';
+
+  if(tplSel==='portada'){
+    // Doctor name top
+    ctx.fillStyle='rgba(255,255,255,0.9)';
+    ctx.font=`600 ${W*0.045}px DM Sans, sans-serif`;
+    ctx.fillText(doctor,W/2,H*0.07);
+
+    // Service BIG
+    ctx.fillStyle='#ffffff';
+    ctx.font=`800 ${W*0.1}px Syne, sans-serif`;
+    const words=servicio.split(' ');
+    let y=H*0.52;
+    words.forEach(w=>{
+      ctx.fillText(w,W/2,y);
+      y+=W*0.11;
+    });
+
+    // CTA bottom
+    ctx.fillStyle=color2;
+    ctx.fillRect(W*0.1,H*0.84,W*0.8,H*0.1);
+    ctx.fillStyle='#000000';
+    ctx.font=`700 ${W*0.055}px Syne, sans-serif`;
+    ctx.fillText('Agenda tu cita',W/2,H*0.905);
+
+    if(tel){
+      ctx.fillStyle='rgba(255,255,255,0.8)';
+      ctx.font=`500 ${W*0.038}px DM Sans, sans-serif`;
+      ctx.fillText('📱 '+tel,W/2,H*0.96);
+    }
+
+  }else if(tplSel==='promo'){
+    ctx.fillStyle='rgba(255,255,255,0.9)';
+    ctx.font=`600 ${W*0.042}px DM Sans, sans-serif`;
+    ctx.fillText(doctor,W/2,H*0.07);
+
+    ctx.fillStyle='#ffffff';
+    ctx.font=`800 ${W*0.07}px Syne, sans-serif`;
+    ctx.fillText('PROMOCIÓN',W/2,H*0.52);
+
+    ctx.font=`700 ${W*0.06}px Syne, sans-serif`;
+    ctx.fillText(servicio,W/2,H*0.6);
+
+    if(precoAntes){
+      ctx.fillStyle='rgba(255,255,255,0.5)';
+      ctx.font=`500 ${W*0.045}px DM Sans, sans-serif`;
+      ctx.fillText('De: '+precoAntes,W/2,H*0.69);
+      // strikethrough
+      const tw=ctx.measureText('De: '+precoAntes).width;
+      ctx.beginPath();ctx.strokeStyle='rgba(255,255,255,0.5)';ctx.lineWidth=2;
+      ctx.moveTo(W/2-tw/2,H*0.685);ctx.lineTo(W/2+tw/2,H*0.685);ctx.stroke();
+    }
+    if(precoPromo){
+      ctx.fillStyle=color2;
+      ctx.font=`900 ${W*0.1}px Syne, sans-serif`;
+      ctx.fillText(precoPromo+' mxn',W/2,H*0.78);
+    }
+
+    ctx.fillStyle=color2;
+    ctx.fillRect(W*0.1,H*0.84,W*0.8,H*0.1);
+    ctx.fillStyle='#000000';
+    ctx.font=`700 ${W*0.055}px Syne, sans-serif`;
+    ctx.fillText('Agenda tu cita',W/2,H*0.905);
+    if(tel){
+      ctx.fillStyle='rgba(255,255,255,0.8)';
+      ctx.font=`500 ${W*0.038}px DM Sans, sans-serif`;
+      ctx.fillText('📱 '+tel,W/2,H*0.96);
+    }
+  }
+}
+
+function drawLogo(ctx,W,H){
+  const img=new Image();
+  img.onload=()=>{
+    const lw=W*0.25,lh=W*0.12;
+    const lx=W-lw-W*0.04,ly=H*0.01;
+    ctx.drawImage(img,lx,ly,lw,lh);
+  };
+  img.src=logoData;
+}
+
+function darkenColor(hex,factor){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return `rgb(${Math.round(r*factor)},${Math.round(g*factor)},${Math.round(b*factor)})`;
+}
+
+// ═══════════════════════════════════
+// GENERATE
+// ═══════════════════════════════════
+async function generarDiseno(){
+  if(!apiKey){toast('Guarda tu API Key primero',true);return;}
+  const doctor=document.getElementById('f-doctor').value.trim();
+  const esp=document.getElementById('f-esp').value.trim();
+  const servicio=document.getElementById('f-servicio').value.trim();
+  if(!doctor||!servicio){toast('Nombre del doctor y servicio son obligatorios',true);return;}
+
+  const color=document.getElementById('color-marca').value;
+  const loading=document.getElementById('canvas-loading');
+  const btn=document.getElementById('btn-gen');
+  btn.disabled=true;
+  btn.innerHTML='<div style="width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite;"></div> Generando...';
+  loading.classList.add('show');
+  document.getElementById('btn-dl').disabled=true;
+
+  try{
+    // 1. Generar copy con GPT
+    document.getElementById('spin-txt').textContent='Generando copy con IA...';
+    const copyResp=await fetch('https://api.openai.com/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+      body:JSON.stringify({
+        model:'gpt-4o-mini',
+        max_tokens:800,
+        messages:[{role:'user',content:`Eres experto en publicidad médica en México para Meta Ads.
+Crea copy para un anuncio de ${tplSel==='portada'?'portada de servicio':tplSel==='promo'?'promoción con precio':'antes y después'}.
+Doctor: ${doctor} | Especialidad: ${esp||'médico'} | Servicio: ${servicio}
+${tplSel==='promo'?`Precio antes: ${document.getElementById('f-precio-antes').value} | Precio promo: ${document.getElementById('f-precio-promo').value}`:''}
+Responde SOLO JSON sin backticks:
+{"headline":"título impactante máx 40 chars","descripcion":"descripción persuasiva máx 125 chars para Meta Ads","cta":"texto botón acción","caption":"caption completo para Instagram/Facebook con emojis y hashtags relevantes para sector médico en Culiacán Sinaloa México","prompt_imagen":"highly detailed english prompt for DALL-E 3: professional medical photography, ${esp||'medical'} specialist, ${servicio}, ${tplSel==='portada'?'doctor in clean modern clinic, confident pose, professional lighting':'clinical environment with patient treatment'}, photorealistic, high quality, no text, no watermarks, suitable for medical advertisement, color palette matching ${color}"}`}]
+      })
+    });
+    if(!copyResp.ok)throw new Error('Error generando copy');
+    const copyData=await copyResp.json();
+    let parsed;
+    try{parsed=JSON.parse(copyData.choices[0].message.content.trim().replace(/```json|```/g,'').trim());}
+    catch{throw new Error('Error procesando respuesta');}
+
+    document.getElementById('copy-headline').textContent=parsed.headline||'—';
+    document.getElementById('copy-desc').textContent=parsed.descripcion||'—';
+    document.getElementById('copy-cta').textContent=parsed.cta||'—';
+    document.getElementById('copy-caption').textContent=parsed.caption||'—';
+    document.getElementById('copy-prompt').textContent=parsed.prompt_imagen||'—';
+
+    // 2. Generar o usar imagen de fondo
+    let bgUrl=null;
+    if(fotoSel==='ia'&&tplSel!=='antesdespues'){
+      document.getElementById('spin-txt').textContent='Generando imagen con DALL-E 3...';
+      const size=fmtH>fmtW?'1024x1792':fmtW>fmtH?'1792x1024':'1024x1024';
+      const imgResp=await fetch('https://api.openai.com/v1/images/generations',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+        body:JSON.stringify({
+          model:'dall-e-3',
+          prompt:parsed.prompt_imagen,
+          n:1,size,quality:'standard'
+        })
+      });
+      if(imgResp.ok){
+        const imgData=await imgResp.json();
+        bgUrl=imgData.data[0].url;
+      }
+    }else if(fotoSel==='upload'&&bgImageData){
+      bgUrl=bgImageData;
+    }
+
+    // 3. Renderizar en canvas
+    document.getElementById('spin-txt').textContent='Componiendo diseño...';
+    bgImageData=bgUrl;
+    renderCanvas(bgUrl||undefined);
+
+    loading.classList.remove('show');
+    toast('¡Diseño generado! ✓');
+
+  }catch(err){
+    loading.classList.remove('show');
+    toast(err.message,true);
+  }
+  btn.disabled=false;
+  btn.innerHTML='✨ Generar diseño';
+}
+
+// ═══════════════════════════════════
+// DOWNLOAD
+// ═══════════════════════════════════
+function descargarDiseno(){
+  const canvas=document.getElementById('design-canvas');
+  const doctor=(document.getElementById('f-doctor').value||'diseno').replace(/\s+/g,'_');
+  const a=document.createElement('a');
+  a.download=`MediVisual_${doctor}_${tplSel}.png`;
+  a.href=canvas.toDataURL('image/png',1.0);
+  a.click();
+  toast('PNG descargado ✓');
+}
+
+// ═══════════════════════════════════
+// COPY
+// ═══════════════════════════════════
+function copiar(id){
+  const txt=document.getElementById(id).textContent;
+  if(txt==='—')return;
+  navigator.clipboard.writeText(txt).then(()=>toast('Copiado ✓'));
+}
+
+function copiarTodo(){
+  const h=document.getElementById('copy-headline').textContent;
+  const d=document.getElementById('copy-desc').textContent;
+  const c=document.getElementById('copy-cta').textContent;
+  const cap=document.getElementById('copy-caption').textContent;
+  navigator.clipboard.writeText(`HEADLINE:\n${h}\n\nDESCRIPCIÓN:\n${d}\n\nCTA: ${c}\n\nCAPTION:\n${cap}`).then(()=>toast('Todo copiado ✓'));
+}
+
+// ═══════════════════════════════════
+// CLIENTS
+// ═══════════════════════════════════
+function getClients(){return JSON.parse(localStorage.getItem('mv2-clients')||'[]');}
+function saveClients(c){localStorage.setItem('mv2-clients',JSON.stringify(c));}
+
+function renderClients(){
+  const list=document.getElementById('clients-list');
+  const clients=getClients();
+  if(!clients.length){list.innerHTML='<div style="text-align:center;color:var(--t3);font-size:13px;padding:20px;">Aún no tienes clientes guardados.<br>Llena los datos y toca "+ Guardar cliente actual".</div>';return;}
+  list.innerHTML=clients.map((c,i)=>`
+    <div class="client-item" onclick="cargarCliente(${i})">
+      <div class="client-av" style="background:${c.color}22;color:${c.color};">${c.doctor.slice(0,2).toUpperCase()}</div>
+      <div><div class="client-name">${c.doctor}</div><div class="client-esp">${c.esp||'—'}</div></div>
+      <button onclick="event.stopPropagation();borrarCliente(${i})" style="margin-left:auto;background:none;border:none;color:var(--t3);cursor:pointer;font-size:16px;">🗑</button>
+    </div>`).join('');
+}
+
+function guardarClienteActual(){
+  const doctor=document.getElementById('f-doctor').value.trim();
+  if(!doctor){toast('Primero llena el nombre del doctor',true);return;}
+  const clients=getClients();
+  const nuevo={
+    doctor,
+    esp:document.getElementById('f-esp').value.trim(),
+    tel:document.getElementById('f-tel').value.trim(),
+    color:document.getElementById('color-marca').value,
+    colorSec:document.getElementById('color-sec').value,
+    logo:logoData||null
+  };
+  const idx=clients.findIndex(c=>c.doctor===doctor);
+  if(idx>=0)clients[idx]=nuevo;
+  else clients.push(nuevo);
+  saveClients(clients);
+  renderClients();
+  toast(`${doctor} guardado ✓`);
+}
+
+function cargarCliente(i){
+  const c=getClients()[i];if(!c)return;
+  document.getElementById('f-doctor').value=c.doctor;
+  document.getElementById('f-esp').value=c.esp||'';
+  document.getElementById('f-tel').value=c.tel||'';
+  document.getElementById('color-marca').value=c.color||'#1a56db';
+  document.getElementById('hex-marca').value=c.color||'#1a56db';
+  document.getElementById('color-sec').value=c.colorSec||'#ffffff';
+  document.getElementById('hex-sec').value=c.colorSec||'#ffffff';
+  if(c.logo){logoData=c.logo;const img=document.getElementById('prev-logo');img.src=c.logo;img.style.display='block';}
+  document.getElementById('clients-modal').classList.remove('show');
+  renderCanvas();
+  toast(`${c.doctor} cargado ✓`);
+}
+
+function borrarCliente(i){
+  const clients=getClients();
+  clients.splice(i,1);
+  saveClients(clients);
+  renderClients();
+  toast('Cliente eliminado');
+}
+
+// ═══════════════════════════════════
+// TOAST
+// ═══════════════════════════════════
+function toast(msg,err=false){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className=err?'err show':'show';
+  setTimeout(()=>t.className='',2800);
+}
+</script>
+</body>
+</html>
