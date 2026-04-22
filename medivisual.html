@@ -117,6 +117,23 @@ textarea.fi{resize:vertical;line-height:1.5;}
 </head>
 <body>
 
+<!-- PIN GATE -->
+<div id="pin-gate" style="position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:24px;padding:36px 28px;width:100%;max-width:360px;text-align:center;">
+    <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;margin-bottom:4px;">Medi<span style="color:var(--accent);">Visual</span></div>
+    <div style="font-size:11px;color:var(--t3);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:28px;">Agente de diseño médico</div>
+    <div style="font-size:36px;margin-bottom:16px;">🔐</div>
+    <div style="font-size:14px;color:var(--t2);margin-bottom:20px;">Ingresa el PIN de acceso</div>
+    <input id="pin-input" type="password" inputmode="numeric" maxlength="8" placeholder="PIN"
+      style="width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:12px;padding:14px;font-size:22px;font-weight:700;color:var(--t1);font-family:'Syne',sans-serif;text-align:center;letter-spacing:8px;outline:none;margin-bottom:12px;"
+      onkeydown="if(event.key==='Enter')verificarPin()">
+    <div id="pin-error" style="font-size:12px;color:var(--red);margin-bottom:12px;min-height:18px;"></div>
+    <button onclick="verificarPin()" style="width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--green));color:#0a0e1a;font-size:15px;font-weight:800;font-family:'Syne',sans-serif;border:none;cursor:pointer;">Entrar →</button>
+  </div>
+</div>
+
+<div id="app-content" style="display:none;">
+
 <div class="header">
   <div>
     <div class="logo">Medi<span>Visual</span></div>
@@ -486,6 +503,26 @@ async function descargarImagen(url,nombre){
     showToast('Abierta en nueva pestaña — clic derecho para guardar');
   }
 }
+
+function verificarPin(){
+  const pin=document.getElementById('pin-input').value.trim();
+  const err=document.getElementById('pin-error');
+  if(pin==='9999'){
+    document.getElementById('pin-gate').style.display='none';
+    document.getElementById('app-content').style.display='block';
+    sessionStorage.setItem('mv-auth','1');
+  }else{
+    err.textContent='PIN incorrecto';
+    document.getElementById('pin-input').value='';
+    setTimeout(()=>err.textContent='',2000);
+  }
+}
+// Auto-check session
+if(sessionStorage.getItem('mv-auth')==='1'){
+  document.getElementById('pin-gate').style.display='none';
+  document.getElementById('app-content').style.display='block';
+}
 </script>
+</div><!-- end app-content -->
 </body>
 </html>
